@@ -1,0 +1,87 @@
+:root{
+  --button-color:#19D895
+}
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+  }
+  /* Navbar styles */
+  .navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: white;
+    border-bottom: 1px solid #E5E7EB;
+    z-index: 1030;
+  }
+  .navbar-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    padding: 0 1rem;
+  }
+  .navbar-brand {
+    font-size: 1.25rem;
+    text-decoration: none;
+    color: #1A1A1A;
+  }
+ 
+  /* Dropdown styles */
+  .navbar-user {
+    position: relative;
+  }
+  .dropdown-toggle {
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    font-size: 1.25rem;
+    cursor: pointer;
+  }
+  .dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.375rem;
+    padding: 0.5rem 0;
+    min-width: 160px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  .dropdown-item {
+    display: block;
+    padding: 0.5rem 1rem;
+    color: #1A1A1A;
+    text-decoration: none;
+  }
+  .dropdown-item:hover {
+    background-color: #F3F4F6;
+  }
+  .dropdown-divider {
+    margin: 0.5rem 0;
+    border-top: 1px solid #E5E7EB;
+  }
+
+  .usercard{
+    background-color: #0133dc;;
+  }
+
+ .userbtn{
+  background-color: #0133dc;
+  color: rgb(255, 255, 255);
+ } 
+
+ .userbtn:hover{
+  background-color: #0133dc;
+  color: rgb(255, 255, 255);
+ }
+  
+  
+  
+  
+  
+  
