@@ -1,32 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Line } from 'recharts';
-import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import baseurl from '../ApiService/ApiService';
-
-// Sample data for the line chart
-const chartData = [
-  { name: 'Jan', users: 0 },
-  { name: 'Feb', users: 0 },
-  { name: 'Mar', users: 0 },
-  { name: 'Apr', users: 0 },
-  { name: 'May', users: 0 },
-  { name: 'Jun', users: 0 },
-  { name: 'Jul', users: 0 },
-  { name: 'Aug', users: 0 },
-  { name: 'Sep', users: 0 },
-  { name: 'Oct', users: 0 },
-  { name: 'Nov', users: 0 },
-  { name: 'Dec', users: 0 }
-];
 
 const Dashboard = () => {
   const [totalUsers, setTotalUsers] = useState(0);
   const [subscription, setSubscription] = useState(0);
   const [todayNewUsers, setTodayNewUsers] = useState(0);
   const [course, setCourse] = useState(0);
-  const [templates, setTemplates] = useState(0);
+  const [templates, setTemplates] = useState([]);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
+
+  // Generate sample data with realistic values
+  const chartData = [
+    { name: 'Jan', users: 120, trend: 115 },
+    { name: 'Feb', users: 145, trend: 140 },
+    { name: 'Mar', users: 158, trend: 155 },
+    { name: 'Apr', users: 178, trend: 170 },
+    { name: 'May', users: 210, trend: 200 },
+    { name: 'Jun', users: 245, trend: 230 },
+    { name: 'Jul', users: 267, trend: 255 },
+    { name: 'Aug', users: 289, trend: 280 },
+    { name: 'Sep', users: 320, trend: 310 },
+    { name: 'Oct', users: 356, trend: 340 },
+    { name: 'Nov', users: 389, trend: 370 },
+    { name: 'Dec', users: 410, trend: 400 }
+  ];
 
   const handleSubmit = async () => {
     if (!title || !message) {
@@ -112,11 +111,9 @@ const Dashboard = () => {
           throw new Error('Failed to fetch courses');
         }
         const data = await response.json();
-        // Check if data exists and has the expected structure
         if (data && Array.isArray(data)) {
           setCourse(data.length);
         } else if (data && typeof data.courses !== 'undefined') {
-          // If the API returns an object with a courses array
           setCourse(data.courses.length);
         } else {
           console.error('Unexpected data format:', data);
@@ -140,10 +137,9 @@ const Dashboard = () => {
         }
         const result = await response.json();
   
-        // Extract templates array correctly
         const templateArray = result.templates;
         if (Array.isArray(templateArray)) {
-          setTemplates(templateArray); // Store array instead of length
+          setTemplates(templateArray);
         } else {
           console.error("Unexpected template data format:", result);
           setTemplates([]);
@@ -156,131 +152,348 @@ const Dashboard = () => {
   
     fetchTemplates();
   }, []);
-  
+
+  // Custom tooltip component for chart
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="custom-tooltip">
+          <p className="label fw-bold">{`${label}`}</p>
+          <p className="value">Users: <span className="fw-bold text-primary">{payload[0].value}</span></p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
-    <div className="container-fluid p-4">
-      <h4 className="mb-4">Dashboard</h4>
-
-      {/* Stats Cards Row */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="card shadow-sm">
-            <div className="card-body d-flex justify-content-between align-items-center p-4">
-              <div className="text-center flex-grow-1">
-                <h2 className="mb-0">{totalUsers}</h2>
-                <p className="mb-0 text-primary">Total Users</p>
-              </div>
-              <div className="text-center flex-grow-1">
-                <h2 className="mb-0">{course}</h2>
-                <p className="mb-0 text-primary">Total Courses</p>
-              </div>
-              <div className="text-center flex-grow-1">
-                <h2 className="mb-0">{templates.length}</h2>
-                <p className="mb-0 text-primary">Templates</p>
-              </div>
+    <div className="dashboard-container bg-light min-vh-100">
+      {/* Header with gradient */}
+      <div className="header-section text-dark p-4 mb-4">
+        <div className="container-fluid">
+          <div className="row align-items-center">
+            <div className="col-12 col-md-6">
+              <h2 className="fw-bold mb-0">Analytics Dashboard</h2>
+              <p className="opacity-75 mb-0">Monitor your platform performance</p>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Pending Stats and New Users Row */}
-      <div className="row mb-4">
-        <div className="col-md-8">
-          <div className="card shadow-sm">
-            <div className="card-body p-4">
-              <div className="mb-4">
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span><span className="text-danger">•</span> Pending Users</span>
-                  <span>1</span>
+      
+      <div className="container-fluid px-4 pb-5">
+        {/* Stats Cards with improved design */}
+        <div className="row g-4 mb-4">
+          <div className="col-md-6 col-lg-3">
+            <div className="card border-0 shadow-sm h-100 stat-card">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div className="icon-wrapper bg-primary bg-opacity-10 text-primary">
+                    <i className="bi bi-people-fill"></i>
+                  </div>
+                  <h6 className="card-subtitle text-muted ms-3 mb-0">Total Users</h6>
                 </div>
-                <div className="progress" style={{ height: '8px' }}>
-                  <div className="progress-bar bg-danger" role="progressbar" style={{ width: '5%' }}></div>
+                <h2 className="fw-bold mb-2">{totalUsers}</h2>
+                <div className="progress mb-2" style={{ height: '5px' }}>
+                  <div className="progress-bar bg-primary" role="progressbar" style={{ width: '75%' }}></div>
+                </div>
+                <div className="d-flex align-items-center">
+                  <span className="badge bg-success-subtle text-success me-2">+5.3%</span>
+                  <small className="text-muted">Since last month</small>
                 </div>
               </div>
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span><span className="text-danger">•</span> Pending Courses</span>
-                  <span>5</span>
+            </div>
+          </div>
+          
+          <div className="col-md-6 col-lg-3">
+            <div className="card border-0 shadow-sm h-100 stat-card">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div className="icon-wrapper bg-success bg-opacity-10 text-success">
+                    <i className="bi bi-book-fill"></i>
+                  </div>
+                  <h6 className="card-subtitle text-muted ms-3 mb-0">Total Courses</h6>
                 </div>
-                <div className="progress" style={{ height: '8px' }}>
-                  <div className="progress-bar bg-danger" role="progressbar" style={{ width: '31%' }}></div>
+                <h2 className="fw-bold mb-2">{course}</h2>
+                <div className="progress mb-2" style={{ height: '5px' }}>
+                  <div className="progress-bar bg-success" role="progressbar" style={{ width: '60%' }}></div>
+                </div>
+                <div className="d-flex align-items-center">
+                  <span className="badge bg-success-subtle text-success me-2">+2.8%</span>
+                  <small className="text-muted">Since last month</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="col-md-6 col-lg-3">
+            <div className="card border-0 shadow-sm h-100 stat-card">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div className="icon-wrapper bg-info bg-opacity-10 text-info">
+                    <i className="bi bi-grid-3x3-gap-fill"></i>
+                  </div>
+                  <h6 className="card-subtitle text-muted ms-3 mb-0">Templates</h6>
+                </div>
+                <h2 className="fw-bold mb-2">{templates.length}</h2>
+                <div className="progress mb-2" style={{ height: '5px' }}>
+                  <div className="progress-bar bg-info" role="progressbar" style={{ width: '45%' }}></div>
+                </div>
+                <div className="d-flex align-items-center">
+                  <span className="badge bg-success-subtle text-success me-2">+3.5%</span>
+                  <small className="text-muted">Since last month</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="col-md-6 col-lg-3">
+            <div className="card border-0 shadow-sm h-100 stat-card">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div className="icon-wrapper bg-warning bg-opacity-10 text-warning">
+                    <i className="bi bi-person-plus-fill"></i>
+                  </div>
+                  <h6 className="card-subtitle text-muted ms-3 mb-0">New Today</h6>
+                </div>
+                <h2 className="fw-bold mb-2">{todayNewUsers}</h2>
+                <div className="progress mb-2" style={{ height: '5px' }}>
+                  <div className="progress-bar bg-warning" role="progressbar" style={{ width: '30%' }}></div>
+                </div>
+                <div className="d-flex align-items-center">
+                  <span className="badge bg-light text-dark border">Active Users</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div className="col-md-4">
-          <div className="card shadow-sm text-white h-100 usercard">
-            <div className="card-body p-4">
-              <div className="d-flex justify-content-between align-items-center">
+        
+        {/* Enhanced Chart Section */}
+        <div className="row g-4 mb-4">
+          <div className="col-12">
+            <div className="card border-0 shadow-sm">
+              <div className="card-header d-flex justify-content-between align-items-center bg-white border-0 pt-4 px-4 pb-0">
                 <div>
-                  <h1 className="display-4 mb-0">{todayNewUsers}</h1>
-                  <p className="mb-0">Users</p>
+                  <h5 className="card-title mb-1">User Growth Analytics</h5>
+                  <p className="text-muted small mb-0">Monthly user acquisition trends</p>
                 </div>
+                <div className="btn-group" role="group">
+                  <button type="button" className="btn btn-sm btn-outline-primary active">Monthly</button>
+                  <button type="button" className="btn btn-sm btn-outline-primary">Weekly</button>
+                  <button type="button" className="btn btn-sm btn-outline-primary">Daily</button>
+                </div>
+              </div>
+              <div className="card-body px-4 pt-3 pb-4">
+                <div style={{ height: '380px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#0d6efd" stopOpacity={0.25}/>
+                          <stop offset="95%" stopColor="#0d6efd" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6c757d', fontSize: 12 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6c757d', fontSize: 12 }} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Area 
+                        type="monotone" 
+                        dataKey="users" 
+                        stroke="#0d6efd" 
+                        strokeWidth={3}
+                        fill="url(#colorUsers)"
+                        activeDot={{ r: 6, strokeWidth: 0, fill: '#0d6efd' }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="trend" 
+                        stroke="#6c757d" 
+                        strokeWidth={2}
+                        strokeDasharray="5 5" 
+                        dot={false}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Enhanced Push Notification Card */}
+        <div className="row">
+          <div className="col-12">
+            <div className="card border-0 shadow-sm">
+              <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center py-4 px-4">
                 <div>
-                  <button className="btn btn-outline-light">
-                    <i className="bi bi-clipboard"></i>
+                  <h5 className="card-title mb-1">Push Notification</h5>
+                  <p className="text-muted small mb-0">Send notifications to your users</p>
+                </div>
+                <span className="badge bg-primary-subtle text-primary px-3 py-2">All Users</span>
+              </div>
+              <div className="card-body p-4">
+                <div className="row g-4">
+                  <div className="col-md-6">
+                    <div className="mb-3">
+                      <label htmlFor="title" className="form-label fw-semibold">Notification Title</label>
+                      <input
+                        type="text"
+                        className="form-control form-control-lg shadow-none rounded-3"
+                        id="title"
+                        placeholder="Enter notification title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                      />
+                      <div className="form-text">Keep it short and attention-grabbing</div>
+                    </div>
+                  </div>
+                  <div className="col-md-6">
+                    <div className="mb-3">
+                      <label htmlFor="message" className="form-label fw-semibold">Message Content</label>
+                      <textarea
+                        className="form-control shadow-none rounded-3"
+                        id="message"
+                        rows="5"
+                        placeholder="Enter your message here..."
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                      ></textarea>
+                      <div className="form-text">Maximum 250 characters recommended</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="row mt-4">
+                <div className="col-12 d-flex">
+                  <button 
+                    className="btn btn-primary px-4 py-2 rounded-3 shadow-sm"
+                    onClick={handleSubmit}
+                  >
+                    <i className="bi bi-send-fill me-2"></i> Send Notification
                   </button>
                 </div>
+                </div>
               </div>
-              <p className="mb-0 mt-2">Today New Users</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Chart and Notification Row */}
-      <div className="row">
-        <div className="col-md-8">
-          <div className="card shadow-sm">
-            <div className="card-body p-4">
-              <h5 className="card-title mb-4">User Details Chart</h5>
-              <div style={{ height: '300px' }}>
-                <LineChart width={700} height={300} data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="users" stroke="#4f46e5" />
-                </LineChart>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="card shadow-sm">
-            <div className="card-body p-4">
-              <h5 className="card-title mb-3">Push Notification</h5>
-              <p className="text-muted">Send Push Notification to all users</p>
-
-              {/* Title Input */}
-              <input
-                type="text"
-                className="form-control mb-3"
-                placeholder="Enter Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-
-              {/* Message Textarea */}
-              <textarea
-                className="form-control mb-3"
-                rows="6"
-                placeholder="Enter Message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-              ></textarea>
-
-              {/* Submit Button */}
-              <button className="btn userbtn" onClick={handleSubmit}>
-                Submit
-              </button>
-            </div>
-          </div>
-        </div>
-
-      </div>
+      {/* Custom CSS with improved styling */}
+      <style>
+        {`
+          /* Enhanced custom CSS */
+          .dashboard-container {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+          }
+          
+          .bg-gradient-primary {
+            background: linear-gradient(135deg, #4361ee, #3f37c9);
+          }
+          
+          .card {
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+          }
+          
+          .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 20px rgba(0,0,0,0.08) !important;
+          }
+          
+          .stat-card {
+            border-left: 4px solid transparent;
+          }
+          
+          .stat-card:nth-child(1) {
+            border-left-color: #0d6efd;
+          }
+          
+          .stat-card:nth-child(2) {
+            border-left-color: #198754;
+          }
+          
+          .stat-card:nth-child(3) {
+            border-left-color: #0dcaf0;
+          }
+          
+          .stat-card:nth-child(4) {
+            border-left-color: #ffc107;
+          }
+          
+          .progress {
+            border-radius: 10px;
+            height: 5px;
+            background-color: #f0f2f5;
+          }
+          
+          .progress-bar {
+            border-radius: 10px;
+          }
+          
+          .badge {
+            padding: 0.5rem 0.8rem;
+            border-radius: 8px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+          }
+          
+          .icon-wrapper {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+          }
+          
+          .bg-success-subtle {
+            background-color: rgba(25, 135, 84, 0.15);
+          }
+          
+          .bg-primary-subtle {
+            background-color: rgba(13, 110, 253, 0.15);
+          }
+          
+          .btn-outline-primary {
+            border-color: #dee2e6;
+            color: #6c757d;
+          }
+          
+          .btn-outline-primary.active {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            color: white;
+          }
+          
+          .card-header {
+            border-bottom: none;
+          }
+          
+          .form-control {
+            border: 1px solid #dee2e6;
+          }
+          
+          .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+          }
+          
+          .custom-tooltip {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            padding: 12px 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: none;
+          }
+          
+          .custom-tooltip p {
+            margin: 0;
+            padding: 3px 0;
+          }
+        `}
+      </style>
     </div>
   );
 };
