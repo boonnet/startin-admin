@@ -360,7 +360,7 @@ const EditTemplate = () => {
                                 <button
                                     type="button"
                                     className="btn"
-                                    style={{ backgroundColor: '#0133dc', color: 'white' }}
+                                    style={{backgroundColor:'#0133dc', color:'white'}}
                                     onClick={addFileInput}
                                 >
                                     <i className="bi bi-plus-circle me-2"></i>
@@ -377,8 +377,8 @@ const EditTemplate = () => {
                             <div className="mt-4 d-flex gap-2">
                                 <button 
                                     type="submit" 
-                                    className="btn"
-                                    style={{ backgroundColor: '#0133dc', color: 'white' }}
+                                    className='btn'
+                                    style={{backgroundColor:'#0133dc', color:'white'}}
                                     disabled={isLoading}
                                 >
                                     {isLoading ? (

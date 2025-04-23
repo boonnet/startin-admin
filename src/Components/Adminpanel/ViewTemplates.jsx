@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Trash, Search, ChevronLeft, ChevronRight, FileText, AlertCircle, Eye, Edit, Plus } from 'lucide-react';
 import axios from 'axios';
-import baseurl from '../ApiService/ApiService';
-import Modal from 'react-bootstrap/Modal';
 import { Link } from 'react-router-dom';
+import Modal from 'react-bootstrap/Modal';
 import Badge from 'react-bootstrap/Badge';
 import Card from 'react-bootstrap/Card';
+import baseurl from '../ApiService/ApiService';
 
 const ViewTemplates = () => {
   const [templates, setTemplates] = useState([]);
@@ -29,11 +30,11 @@ const ViewTemplates = () => {
         const response = await axios.get(`${baseurl}/api/templates/all`);
         setTemplates(response.data.templates);
         setFilteredTemplates(response.data.templates);
-        setLoading(false);
       } catch (err) {
-        setError('Failed to fetch templates');
-        setLoading(false);
         console.error('Error fetching templates:', err);
+        setError('Failed to fetch templates');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -53,22 +54,29 @@ const ViewTemplates = () => {
     setCurrentPage(1);
   }, [searchTerm, templates]);
 
-  // Pagination logic
-  const indexOfLastTemplate = currentPage * templatesPerPage;
-  const indexOfFirstTemplate = indexOfLastTemplate - templatesPerPage;
-  const currentTemplates = filteredTemplates.slice(indexOfFirstTemplate, indexOfLastTemplate);
-  const totalPages = Math.ceil(filteredTemplates.length / templatesPerPage);
+  // Handle search change
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  // Handle page change
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
 
   // Handle delete template
   const handleDeleteTemplate = async (templateId) => {
-    if (window.confirm('Are you sure you want to delete this template?')) {
-      try {
-        await axios.delete(`${baseurl}/api/templates/delete/${templateId}`);
-        setTemplates(templates.filter(template => template.id !== templateId));
-      } catch (err) {
-        console.error('Error deleting template:', err);
-        alert('Failed to delete template');
-      }
+    if (!window.confirm('Are you sure you want to delete this template?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${baseurl}/api/templates/delete/${templateId}`);
+      setTemplates(templates.filter(template => template.id !== templateId));
+      alert("Template deleted successfully");
+    } catch (err) {
+      console.error('Error deleting template:', err);
+      alert('Failed to delete template');
     }
   };
 
@@ -79,10 +87,10 @@ const ViewTemplates = () => {
       const response = await axios.get(`${baseurl}/api/templates/${templateId}`);
       setSelectedTemplate(response.data.template);
       setShowModal(true);
-      setTemplateDetailsLoading(false);
     } catch (err) {
       console.error('Error fetching template details:', err);
       alert('Failed to fetch template details');
+    } finally {
       setTemplateDetailsLoading(false);
     }
   };
@@ -93,23 +101,86 @@ const ViewTemplates = () => {
     setSelectedTemplate(null);
   };
 
-  // Generate pagination items
-  const renderPaginationItems = () => {
-    const items = [];
-    for (let i = 1; i <= totalPages; i++) {
-      items.push(
-        <li className={`page-item ${currentPage === i ? 'active' : ''}`} key={i}>
-          <button
-            className={`page-link border-primary ${currentPage === i ? 'bg-primary text-white' : ''}`}
-            style={{ color: currentPage === i ? 'white' : '#0d6efd' }}
-            onClick={() => setCurrentPage(i)}
+  // Pagination logic
+  const indexOfLastTemplate = currentPage * templatesPerPage;
+  const indexOfFirstTemplate = indexOfLastTemplate - templatesPerPage;
+  const currentTemplates = filteredTemplates.slice(indexOfFirstTemplate, indexOfLastTemplate);
+  const totalPages = Math.ceil(filteredTemplates.length / templatesPerPage);
+
+  // Function to render page numbers with ellipsis for large number of pages
+  const renderPageNumbers = () => {
+    const maxPageButtons = 5;
+    
+    if (totalPages <= maxPageButtons) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+        <button 
+          key={number} 
+          className={`btn ${currentPage === number ? 'btn-primary' : 'btn-light'} mx-1`}
+          onClick={() => handlePageChange(number)}
+        >
+          {number}
+        </button>
+      ));
+    } else {
+      let pages = [];
+      
+      // Always show first page
+      pages.push(
+        <button 
+          key={1} 
+          className={`btn ${currentPage === 1 ? 'btn-primary' : 'btn-light'} mx-1`}
+          onClick={() => handlePageChange(1)}
+        >
+          1
+        </button>
+      );
+      
+      // Calculate range of page numbers to show around current page
+      let startPage = Math.max(2, currentPage - 1);
+      let endPage = Math.min(totalPages - 1, currentPage + 1);
+      
+      // Add ellipsis if needed before middle pages
+      if (startPage > 2) {
+        pages.push(
+          <button key="ellipsis1" className="btn btn-light mx-1 disabled">...</button>
+        );
+      }
+      
+      // Add middle pages
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(
+          <button 
+            key={i} 
+            className={`btn ${currentPage === i ? 'btn-primary' : 'btn-light'} mx-1`}
+            onClick={() => handlePageChange(i)}
           >
             {i}
           </button>
-        </li>
-      );
+        );
+      }
+      
+      // Add ellipsis if needed after middle pages
+      if (endPage < totalPages - 1) {
+        pages.push(
+          <button key="ellipsis2" className="btn btn-light mx-1 disabled">...</button>
+        );
+      }
+      
+      // Always show last page
+      if (totalPages > 1) {
+        pages.push(
+          <button 
+            key={totalPages} 
+            className={`btn ${currentPage === totalPages ? 'btn-primary' : 'btn-light'} mx-1`}
+            onClick={() => handlePageChange(totalPages)}
+          >
+            {totalPages}
+          </button>
+        );
+      }
+      
+      return pages;
     }
-    return items;
   };
 
   // Render template details modal
@@ -204,124 +275,190 @@ const ViewTemplates = () => {
     );
   };
 
-  if (loading) return <div className="text-center mt-5">Loading templates...</div>;
-  if (error) return <div className="alert alert-danger mt-5">{error}</div>;
-
   return (
-    <div className="container mt-4">
-      <h4>Manage Templates</h4>
-
-      <div className="mb-4 d-flex justify-content-between">
-        <Link to="/add-template" className="btn" style={{backgroundColor:'#0133dc', color:'white'}}>
-          <i className="bi-plus-circle me-1"></i>
-          Create New Template
-        </Link>
-        <input
-          type="text"
-          className="form-control w-50"
-          placeholder="Search Templates"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ boxShadow: 'none' }}
-        />
+    <div className="container-fluid p-4">
+      {/* Header Section */}
+      <div className="bg-light p-4 rounded-3 shadow-sm mb-4">
+        <div className="d-flex align-items-center gap-2 mb-2">
+          <FileText size={24} className="text-primary" />
+          <h4 className="fw-bold mb-0">Manage Templates</h4>
+        </div>
+        <p className="text-muted mb-0">View and manage all templates in the system</p>
       </div>
 
-      <div className="table-responsive">
-        <table className="table table-bordered table-hover align-middle">
-          <thead className="table-light text-center">
-            <tr>
-              <th className="text-center">#</th>
-              <th className="text-center">Template Name</th>
-              <th className="text-center">Description</th>
-              <th className="text-center">Price</th>
-              <th className="text-center">Files</th>
-              <th className="text-center">View</th>
-              <th className="text-center">Edit</th>
-              <th className="text-center">Delete</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentTemplates.length > 0 ? (
-              currentTemplates.map((template, index) => {
-                const files = Array.isArray(template.files) 
-                  ? template.files 
-                  : (typeof template.files === 'string' ? JSON.parse(template.files) : []);
-                  
-                return (
-                  <tr key={template.id}>
-                    <td className="text-center">{indexOfFirstTemplate + index + 1}</td>
-                    <td>{template.template_name}</td>
-                    <td>{template.description?.length > 50 
-                      ? `${template.description.substring(0, 50)}...` 
-                      : template.description}
-                    </td>
-                    <td className="text-center">₹{template.price}</td>
-                    <td className="text-center">{files.length}</td>
-                    <td className="text-center">
-                      <button
-                        className="btn btn-info"
-                        onClick={() => handleViewTemplate(template.id)}
-                      >
-                        <i className="bi-eye"></i>
-                      </button>
-                    </td>
-                    <td className="text-center">
-                      <Link to={`/edit-template/${template.id}`} className="btn btn-primary">
-                        <i className="bi-pencil"></i>
-                      </Link>
-                    </td>
-                    <td className="text-center">
-                      <button
-                        className="btn btn-danger"
-                        onClick={() => handleDeleteTemplate(template.id)}
-                      >
-                        <i className="bi-x"></i>
-                      </button>
-                    </td>
+      {/* Main Card */}
+      <div className="card border-0 shadow-sm mb-4">
+        <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <div className="d-flex align-items-center">
+            <span className="badge bg-primary rounded-pill me-2">{filteredTemplates.length}</span>
+            <span className="fw-medium">Total Templates</span>
+          </div>
+          
+          <div className="d-flex align-items-center">
+            <Link to="/add-template" className="btn btn-primary me-3">
+              <Plus size={18} className="me-1" />
+              Create New Template
+            </Link>
+            
+            <div className="position-relative">
+              <input
+                type="text"
+                className="form-control bg-light border-0"
+                placeholder="Search templates..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                style={{ width: '300px', paddingLeft: '40px' }}
+              />
+              <Search size={18} className="position-absolute text-muted" style={{ left: '12px', top: '10px' }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="card-body p-0">
+          {loading ? (
+            <div className="d-flex flex-column align-items-center justify-content-center py-5">
+              <div className="spinner-grow text-primary mb-3" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="text-muted">Loading template data...</p>
+            </div>
+          ) : error ? (
+            <div className="d-flex align-items-center justify-content-center text-danger py-5">
+              <AlertCircle size={20} className="me-2" />
+              <p className="mb-0">{error}</p>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table mb-0 table-striped">
+                <thead>
+                  <tr className="text-uppercase" style={{ fontSize: '0.85rem', letterSpacing: '0.05em' }}>
+                    <th className="px-4" style={{ width: '5%', borderLeft: '3px solid transparent' }}>#</th>
+                    <th className="px-4" style={{ width: '20%', borderLeft: '3px solid transparent' }}>Template Name</th>
+                    <th className="px-4" style={{ width: '30%', borderLeft: '3px solid transparent' }}>Description</th>
+                    <th className="px-4 text-center" style={{ width: '10%', borderLeft: '3px solid transparent' }}>Price</th>
+                    <th className="px-4 text-center" style={{ width: '10%', borderLeft: '3px solid transparent' }}>Files</th>
+                    <th className="px-4 text-center" style={{ width: '25%', borderLeft: '3px solid transparent' }}>Actions</th>
                   </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td colSpan="8" className="text-center">No templates found</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                </thead>
+                <tbody>
+                  {currentTemplates.length > 0 ? (
+                    currentTemplates.map((template, index) => {
+                      const files = Array.isArray(template.files) 
+                        ? template.files 
+                        : (typeof template.files === 'string' ? JSON.parse(template.files) : []);
+                        
+                      return (
+                        <tr 
+                          key={template.id} 
+                          style={{ borderLeft: '3px solid transparent', transition: 'all 0.2s' }}
+                          className="template-row"
+                        >
+                          <td className="px-4 py-3">{indexOfFirstTemplate + index + 1}</td>
+                          <td className="px-4 py-3 fw-medium">{template.template_name}</td>
+                          <td className="px-4 py-3">
+                            {template.description?.length > 50 
+                              ? `${template.description.substring(0, 50)}...` 
+                              : template.description || 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 text-center">₹{template.price}</td>
+                          <td className="px-4 py-3 text-center">{files.length}</td>
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              className="btn btn-info btn-sm mx-1"
+                              onClick={() => handleViewTemplate(template.id)}
+                              data-bs-toggle="tooltip"
+                              data-bs-placement="top"
+                              title="View Template"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <Link 
+                              to={`/edit-template/${template.id}`} 
+                              className="btn btn-primary btn-sm mx-1"
+                              data-bs-toggle="tooltip"
+                              data-bs-placement="top"
+                              title="Edit Template"
+                            >
+                              <Edit size={16} />
+                            </Link>
+                            <button
+                              className="btn btn-danger btn-sm mx-1"
+                              onClick={() => handleDeleteTemplate(template.id)}
+                              data-bs-toggle="tooltip"
+                              data-bs-placement="top"
+                              title="Delete Template"
+                            >
+                              <Trash size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="text-center py-5">
+                        <div className="d-flex flex-column align-items-center">
+                          <AlertCircle size={40} className="text-muted mb-3" />
+                          <p className="text-muted mb-1">No templates found</p>
+                          <small className="text-muted">Try adjusting your search criteria</small>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {!loading && !error && currentTemplates.length > 0 && (
+          <div className="card-footer bg-white py-3">
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <small className="text-muted">
+                  Showing <span className="fw-bold text-primary">{indexOfFirstTemplate + 1}</span> to <span className="fw-bold text-primary">{Math.min(indexOfLastTemplate, filteredTemplates.length)}</span> of <span className="fw-bold">{filteredTemplates.length}</span> entries
+                </small>
+              </div>
+              
+              <div className="d-flex align-items-center">
+                <button
+                  className="btn btn-outline-primary me-2"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                
+                <div className="d-flex">
+                  {renderPageNumbers()}
+                </div>
+                
+                <button
+                  className="btn btn-outline-primary ms-2"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
-      {totalPages > 1 && (
-        <nav className="d-flex justify-content-center">
-          <ul className="pagination m-0">
-            <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-              <button
-                className="page-link border-primary "
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                style={{ color: '#0d6efd' }}
-                disabled={currentPage === 1}
-              >
-                &laquo;
-              </button>
-            </li>
-
-            {renderPaginationItems()}
-
-            <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-              <button
-                className="page-link border-primary"
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                style={{ color: '#0d6efd' }}
-                disabled={currentPage === totalPages}
-              >
-                &raquo;
-              </button>
-            </li>
-          </ul>
-        </nav>
-      )}
 
       {/* Render Template Details Modal */}
       {renderTemplateDetailsModal()}
+
+      <style jsx>{`
+        .template-row:hover {
+          background-color: #f8f9ff !important;
+          border-left: 3px solid #0d6efd !important;
+          cursor: pointer;
+        }
+        .table-striped > tbody > tr:nth-of-type(odd) {
+          background-color: rgba(0, 0, 0, 0.02);
+        }
+      `}</style>
     </div>
   );
 };

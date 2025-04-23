@@ -369,7 +369,7 @@ const Dashboard = () => {
                     onClick={handleSubmit}
                   >
                     <i className="bi bi-send-fill me-2"></i> Send Notification
-                  </button>
+                  </button> 
                 </div>
                 </div>
               </div>
